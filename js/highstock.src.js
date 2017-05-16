@@ -1,5 +1,5 @@
 /**
- * @license Highstock JS v5.0.11 (2017-05-04)
+ * @license Highstock JS v5.0.11-modified (2017-05-05)
  *
  * (c) 2009-2016 Torstein Honsi
  *
@@ -35,7 +35,7 @@
 
         var Highcharts = win.Highcharts ? win.Highcharts.error(16, true) : {
             product: 'Highstock',
-            version: '5.0.11',
+            version: '5.0.11-modified',
             deg2rad: Math.PI * 2 / 360,
             doc: doc,
             hasBidiBug: hasBidiBug,
@@ -4044,7 +4044,7 @@
 
                 // Add description
                 desc = this.createElement('desc').add();
-                desc.element.appendChild(doc.createTextNode('Created with Highstock 5.0.11'));
+                desc.element.appendChild(doc.createTextNode('Created with Highstock 5.0.11-modified'));
 
 
                 renderer.defs = this.createElement('defs').add();
@@ -4348,7 +4348,7 @@
 
                     clsRegex = /<.*class="([^"]+)".*>/;
                     styleRegex = /<.*style="([^"]+)".*>/;
-                    hrefRegex = /<.*href="(http[^"]+)".*>/;
+                    hrefRegex = /<.*href="([^"]+)".*>/;
 
                     if (tempParent) {
                         tempParent.appendChild(textNode); // attach it to the DOM to read offset width
@@ -4400,7 +4400,7 @@
                                     attr(tspan, 'style', spanStyle);
                                 }
                                 if (hrefRegex.test(span) && !forExport) { // Not for export - #1529
-                                    attr(tspan, 'onclick', 'location.href=\"' + span.match(hrefRegex)[1] + '\"');
+                                    attr(tspan, 'onclick', 'window.open(\"' + span.match(hrefRegex)[1] + '\")');
                                     css(tspan, {
                                         cursor: 'pointer'
                                     });
@@ -12779,6 +12779,9 @@
                     showCheckbox = legend.createCheckboxForItem &&
                     seriesOptions &&
                     seriesOptions.showCheckbox,
+                    // full width minus text width
+                    itemExtraWidth = symbolWidth + symbolPadding + itemDistance +
+                    (showCheckbox ? 20 : 0),
                     useHTML = options.useHTML,
                     fontSize = 12,
                     itemClassName = item.options.className;
@@ -12842,6 +12845,14 @@
                 // Colorize the items
                 legend.colorizeItem(item, item.visible);
 
+                // Take care of max width and text overflow (#6659)
+                if (!itemStyle.width) {
+                    li.css({
+                        width: (options.itemWidth || chart.spacingBox.width) -
+                            itemExtraWidth
+                    });
+                }
+
                 // Always update the text
                 legend.setText(item);
 
@@ -12851,8 +12862,7 @@
                 itemWidth = item.checkboxOffset =
                     options.itemWidth ||
                     item.legendItemWidth ||
-                    symbolWidth + symbolPadding + bBox.width + itemDistance +
-                    (showCheckbox ? 20 : 0);
+                    bBox.width + itemExtraWidth;
                 legend.itemHeight = itemHeight = Math.round(
                     item.legendItemHeight || bBox.height || legend.symbolHeight
                 );
@@ -20580,7 +20590,7 @@
                 hasRendered = series.hasRendered || 0,
                 str,
                 dataLabelsGroup,
-                defer = pick(options.defer, true),
+                defer = pick(options.defer, !!seriesOptions.animation),
                 renderer = series.chart.renderer;
 
             if (options.enabled || series._hasPointLabels) {
